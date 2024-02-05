@@ -412,7 +412,13 @@ class Controller:
         bool
             whether the controller completes the path or not
         """
-        raise NotImplementedError
+        # run in a loop 
+        # get tag position 
+        # fk = self._kin.forward_position_kinematics(joint_values=positions_dict)
+        # offset 3rd position value height (0.75)
+        # specifiy target position: target_position = (target_position - current_position) * 0.05 + current_position
+        # call step_control w ^ params 
+        # get tag position & repeat 
 
 class FeedforwardJointVelocityController(Controller):
     def step_control(self, target_position, target_velocity, target_acceleration):
@@ -458,7 +464,7 @@ class WorkspaceVelocityController(Controller):
         is given as a 6D Twist (vx, vy, vz, wx, wy, wz).
         This method should call self._kin.forward_position_kinematics() to get the current workspace 
         configuration and self._limb.set_joint_velocities() to set the joint velocity to something.  
-        Remember that we want to track a trajectory in SE(3), and implement the controller described in the
+        Remember that we want to track a traj                             m and implement the controller described in the
         project document PDF.
         Parameters
         ----------
@@ -466,8 +472,11 @@ class WorkspaceVelocityController(Controller):
         target_velocity: (6,) ndarray of desired body-frame se(3) velocity (vx, vy, vz, wx, wy, wz).
         target_acceleration: ndarray of desired accelerations (should you need this?).
         """
-        raise NotImplementedError
-        control_input = None        
+        current_position = get_joint_positions(self._limb)
+        current_velocity = get_joint_velocities(self._limb)
+        e = current_position - target_position
+        de = current_velocity - target_velocity
+        control_input = target_velocity - (self.Kp @ e + self.Kv @ de)
         self._limb.set_joint_velocities(joint_array_to_dict(control_input, self._limb))
 
 
@@ -496,7 +505,7 @@ class PDJointVelocityController(Controller):
     def step_control(self, target_position, target_velocity, target_acceleration):
         """
         Makes a call to the robot to move according to it's current position and the desired position 
-        according to the input path and the current time. his method should call
+        according to the input path and the current time. This method should call
         get_joint_positions and get_joint_velocities from the utils package to get the current joint 
         position and velocity and self._limb.set_joint_velocities() to set the joint velocity to something.  
         You may find joint_array_to_dict() in utils.py useful as well.
